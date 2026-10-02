@@ -3,7 +3,7 @@
 Generate icons in one consistent style: tiled, flat, four colors and one pink accent.
 Made by Lunch Money.
 
-**Live app:** https://YOUR-USERNAME.github.io/icon-studio/  ← replace after setup
+**Live app:** https://maromaruu.github.io/icon-studio-au/
 
 ## What it does
 

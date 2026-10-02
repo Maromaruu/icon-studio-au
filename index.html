@@ -133,9 +133,12 @@ a.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
 #aiBox .row{margin-top:12px}
 #aiBox .row .btn{flex:1;padding:9px 12px;font-size:13.5px}
 .refbox > *{max-width:100%}
+.modehint{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
 .hint{font-size:12.5px;color:var(--muted);margin:10px 0 0;line-height:1.45}
 .refs img{width:44px;height:44px}
 .variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.variants.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.variants.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.variants{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .card{background:var(--tile);border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
 .card img{width:100%;max-width:120px;aspect-ratio:1}
@@ -144,7 +147,7 @@ a.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
 .card .acts .btn{padding:6px 10px;font-size:13px}
 .remix{display:flex;gap:6px;width:100%}
 .remix input{flex:1;min-width:0;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12.5px;outline:none}
-.remix .btn{padding:6px 10px;font-size:13px}
+.remix .btn{padding:6px 10px;font-size:13px;flex:1;width:100%}
 .empty{color:var(--muted);padding:26px 4px;text-align:center}
 .colhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
 .colhead h2{margin:0;font-size:20px}
@@ -197,6 +200,7 @@ dialog .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-t
       </div>
       <label class="f" for="prompt" id="promptLabel">What should the icon show?</label>
       <textarea id="prompt" spellcheck="false"></textarea>
+      <p class="modehint" id="modeHint"></p>
       <p class="status" id="status" aria-live="polite"></p>
       <div class="genactions">
         <button class="btn ghost hidden" id="randAbs">Random 6</button>
@@ -740,14 +744,14 @@ function renderVariants(){
     const dl = document.createElement("button"); dl.className = "btn ghost"; dl.textContent = "SVG"; dl.onclick = () => downloadSVG(v);
     acts.append(save, dl);
     const rm = document.createElement("div"); rm.className = "remix";
-    rm.innerHTML = `<input type="text" placeholder="${v.recipe ? "Change… (empty = random)" : "Change… (empty = variations)"}" aria-label="Describe the change for ${v.name.replace(/"/g,"")}"><button class="btn ghost">Remix</button>`;
-    const rIn = rm.querySelector("input"), rBtn = rm.querySelector("button");
+    rm.innerHTML = `<button class="btn ghost">Remix</button>`;
+    const rBtn = rm.querySelector("button");
+    rBtn.setAttribute("aria-label", `Remix ${v.name}`);
     rBtn.onclick = () => {
-      const ask = rIn.value.trim();
+      const ask = "";
       if (v.recipe && !ask){ variants = [v, ...[0,1].map(()=>remix(v))]; $("varTitle").textContent = `Remixes of “${v.name}”`; renderVariants(); return; }
       run(remixPrompt(v, ask), v.kind || "object", ask ? `“${v.name}”: ${ask}` : `Variations of “${v.name}”`, v, v.recipe ? v.name : undefined);
     };
-    rIn.addEventListener("keydown", e => { if (e.key === "Enter") rBtn.click(); });
     d.appendChild(rm);
     box.appendChild(d);
   });
@@ -1296,6 +1300,9 @@ function updateGenUI(){
   $("promptLabel").textContent = genKind === "object"
     ? (batch ? "Objects, one per line (up to 8)" : "What should the icon show?")
     : (batch ? "Concepts, one per line (up to 8)" : "What concept should it express?");
+  $("modeHint").textContent = batch
+    ? "Batch: several things at once, one per line (up to 8). You get one icon for each."
+    : "Single: one thing at a time. You get 3 options to choose from.";
   $("prompt").placeholder = genKind === "object"
     ? (batch ? "calendar\nbell\ncloud hosting\nsecure payment" : "e.g. cloud hosting, invoice, garden glove")
     : (batch ? "sustainability\ncybersecurity\nforesight" : "e.g. sustainability, signal detected, foresight");
@@ -1559,6 +1566,21 @@ function loadPrefs(){
 })();
 /* ================= Boot ================= */
 loadPrefs(); renderColors(); rerender();
+/* ---------- 4 example icons shown on landing ---------- */
+function landingExamples(){
+  const out = [];
+  try{
+    const cloud = PH_BY_NAME["cloud"], drives = PH_BY_NAME["hard-drives"];
+    if (cloud && drives) out.push(pickVariant("cloud hosting", { main: cloud, badge: drives }));
+  }catch(e){}
+  const rec = (name, tags, layers) => ({ name, tags, kind:"abstract", recipe:{layers}, body: enforceAccent(renderRecipe({layers})) });
+  try{ out.push(rec("sustainability", ["sustainability","leaf","abstract"], [{type:"dots",area:"disc",r:58,count:130,dot:5.6,style:"s"},{type:"disc",r:30,style:"c"},{type:"motif",name:"leaf",size:38,style:"a"}])); }catch(e){}
+  try{ const eye = motifMap()["foresight"]; if (eye) out.push(phVariant(eye)); }catch(e){}
+  return out.filter(v => v && v.body).slice(0,3);
+}
+variants = landingExamples();
+renderVariants();
+if (variants.length) $("varTitle").textContent = "Examples";
 (async () => {
   if (!window.claude){ setStatus("Open this page in Claude to generate and save icons."); return; }
   claude.use("sample").then(s => { sample = s; if(!s) setStatus("No AI key set: library icons and abstract patterns work. Add a key in AI settings for AI drawing."); });

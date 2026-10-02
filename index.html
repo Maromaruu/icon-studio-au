@@ -36,7 +36,7 @@ h1 img{width:40px;height:40px}
 .panel h2{font-size:16px;margin:0 0 12px;font-weight:600}
 .panel + .panel{margin-top:16px}
 label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
-input[type=text],textarea{width:100%;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+input[type=text],input[type=password],textarea{width:100%;box-sizing:border-box;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
 textarea{min-height:92px;resize:vertical}
 input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:var(--ink);color:var(--bg)}
@@ -96,13 +96,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .histbtn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .histbtn svg{width:13px;height:13px}
 .histbtn:disabled{opacity:.35;cursor:default}
-.sk{background:var(--tile);border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.sk .skt{width:100%;max-width:120px;aspect-ratio:1;border-radius:16px;background:color-mix(in srgb, var(--ink) 16%, transparent)}
-.sk .skl{width:80%;height:10px;border-radius:5px;background:color-mix(in srgb, var(--ink) 24%, transparent)}
-.sk .skb{width:80%;height:26px;border-radius:8px;background:color-mix(in srgb, var(--ink) 24%, transparent)}
-.sk.loading .skt,.sk.loading .skl,.sk.loading .skb{animation:skpulse 1.2s ease-in-out infinite}
+.sk{border-radius:16px;aspect-ratio:4/5;background:color-mix(in srgb, var(--ink) 9%, transparent)}
+.sk.loading{animation:skpulse 1.2s ease-in-out infinite}
 @keyframes skpulse{50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){.sk.loading *{animation:none}}
+@media (prefers-reduced-motion:reduce){.sk.loading{animation:none}}
 .refbox{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .refbox summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
 .refbox[open] summary{margin-bottom:8px}
@@ -131,7 +128,11 @@ a.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
 .lmlogo{height:28px;width:auto}
 .tiledel.armed{width:auto;padding:0 9px;opacity:1;background:#C43B3B;border-color:#C43B3B;color:#fff;font-size:11.5px;font-weight:600;border-radius:999px}
 .btn.armed{background:#C43B3B;border-color:#C43B3B;color:#fff}
-.aisel{width:100%;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.aisel{width:100%;max-width:100%;box-sizing:border-box;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);font:inherit;font-size:14px;outline:none}
+#aiBox input,#aiBox select{max-width:100%;font-size:14px}
+#aiBox .row{margin-top:12px}
+#aiBox .row .btn{flex:1;padding:9px 12px;font-size:13.5px}
+.refbox > *{max-width:100%}
 .hint{font-size:12.5px;color:var(--muted);margin:10px 0 0;line-height:1.45}
 .refs img{width:44px;height:44px}
 .variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -725,7 +726,7 @@ function renderVariants(){
   trackSet();
   if (!variants.some(v=>v.convs)) showConventions([]);
   const box = $("variants");
-  const skeleton = n => Array.from({length:n}, () => `<div class="sk${loading ? " loading" : ""}" aria-hidden="true"><div class="skt"></div><div class="skl"></div><div class="skb"></div></div>`).join("");
+  const skeleton = n => Array.from({length:n}, () => `<div class="sk${loading ? " loading" : ""}" aria-hidden="true"></div>`).join("");
   if (!variants.length){ box.innerHTML = skeleton(3); return; }
   box.innerHTML = "";
   variants.forEach(v => {
@@ -1553,7 +1554,6 @@ function loadPrefs(){
 (function(){
   const S = window.AI_SETTINGS || {};
   $("aiProvider").value = S.provider || "anthropic"; $("aiKey").value = S.key || ""; $("aiModel").value = S.model || "";
-  if (!S.key) $("aiBox").open = true;
   $("aiSave").onclick = () => { window.saveAISettings({ provider:$("aiProvider").value, key:$("aiKey").value.trim(), model:$("aiModel").value.trim(), quickModel:"" }); location.reload(); };
   $("aiClear").onclick = () => { window.saveAISettings({ provider:$("aiProvider").value, key:"", model:"", quickModel:"" }); location.reload(); };
 })();
